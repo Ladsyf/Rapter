@@ -1,0 +1,1 @@
+pub const DB_URL: &str = "sqlite:rapter.db";
