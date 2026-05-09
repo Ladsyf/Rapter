@@ -1,0 +1,44 @@
+<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="245" fill="#f5f5f5"/>
+  
+  <!-- Raptor head (stylized eagle looking right) -->
+  <!-- Left wing/body -->
+  <path d="M 150 200 Q 180 170 220 160 L 210 220 Q 180 210 150 240 Z" fill="#1e88e5" opacity="0.9"/>
+  
+  <!-- Right wing -->
+  <path d="M 350 200 Q 320 170 280 160 L 290 220 Q 320 210 350 240 Z" fill="#00bcd4" opacity="0.9"/>
+  
+  <!-- Main body/core -->
+  <circle cx="256" cy="240" r="85" fill="#1e88e5"/>
+  
+  <!-- Eye -->
+  <circle cx="260" cy="230" r="18" fill="#fff"/>
+  <circle cx="263" cy="230" r="10" fill="#1e88e5"/>
+  <circle cx="265" cy="228" r="5" fill="#fff"/>
+  
+  <!-- Beak -->
+  <polygon points="320,240 360,235 330,250 360,265 320,260" fill="#00bcd4"/>
+  
+  <!-- Angular code brackets representing scripts -->
+  <!-- Left bracket -->
+  <g transform="translate(120, 300)">
+    <line x1="20" y1="0" x2="0" y2="0" stroke="#ffc107" stroke-width="8" stroke-linecap="round"/>
+    <line x1="0" y1="0" x2="0" y2="60" stroke="#ffc107" stroke-width="8" stroke-linecap="round"/>
+    <line x1="0" y1="60" x2="20" y2="60" stroke="#ffc107" stroke-width="8" stroke-linecap="round"/>
+  </g>
+  
+  <!-- Right bracket -->
+  <g transform="translate(372, 300)">
+    <line x1="0" y1="0" x2="20" y2="0" stroke="#ffc107" stroke-width="8" stroke-linecap="round"/>
+    <line x1="20" y1="0" x2="20" y2="60" stroke="#ffc107" stroke-width="8" stroke-linecap="round"/>
+    <line x1="20" y1="60" x2="0" y2="60" stroke="#ffc107" stroke-width="8" stroke-linecap="round"/>
+  </g>
+  
+  <!-- Repository symbol (stacked lines) -->
+  <g transform="translate(256, 380)">
+    <rect x="-30" y="-15" width="60" height="10" fill="#00bcd4" rx="2"/>
+    <rect x="-30" y="0" width="60" height="10" fill="#1e88e5" rx="2"/>
+    <rect x="-30" y="15" width="60" height="10" fill="#00bcd4" rx="2"/>
+  </g>
+</svg>

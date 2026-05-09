@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "rapter",
+  "productName": "Rapter",
   "version": "0.1.0",
   "identifier": "com.blueoasiscode.rapter",
   "build": {
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "rapter",
+        "title": "Rapter",
         "width": 800,
         "height": 600
       }
@@ -24,7 +24,8 @@
   "plugins": {
     "sql": {
       "preload": [
-        "sqlite:rapter.db"
+        "sqlite:rapter.db",
+        "sqlite:rapter-dev.db"
       ]
     }
   },

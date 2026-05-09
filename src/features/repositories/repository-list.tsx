@@ -1,192 +1,125 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { sileo } from "sileo";
+import ActionMenuButton from "../../components/action-menu-button";
+import Breadcrumbs from "../../components/breadcrumbs";
+import PageShell from "../../components/page-shell";
+import StateMessage from "../../components/state-message";
 import { useAppDispatch, useAppSelector } from "../../hooks";
-import { IRepository } from "./models";
-import { ICreateRepositoryInput, repositoriesActions } from "./slice";
+import { ExplorerDragData } from "./drag-drop";
+import FolderListItem from "./folder-list-item";
+import RepositoryListItem from "./repository-list-item";
+import {
+  repositoriesActions,
+  selectCurrentContents,
+  selectLoading,
+} from "./slice";
 
-const emptyForm = (): ICreateRepositoryInput => ({
-    name: "",
-    description: "",
-    path: "",
-    scripts: [],
-});
+export default function RepositoryList() {
+  const dispatch = useAppDispatch();
+  const navigate = useNavigate();
+  const contents = useAppSelector(selectCurrentContents);
+  const loading = useAppSelector(selectLoading);
 
-export default function RepositoryList()
-{
-    const dispatch = useAppDispatch();
-    const { repositories, loading } = useAppSelector((state) => state.repositories);
+  useEffect(() => {
+    dispatch(repositoriesActions.loadRootContents());
+  }, [dispatch]);
 
-    const [showForm, setShowForm] = useState(false);
-    const [editing, setEditing] = useState<IRepository | null>(null);
-    const [form, setForm] = useState<ICreateRepositoryInput>(emptyForm());
+  const handleCreateRepository = () => {
+    navigate("/repositories/create");
+  };
 
-    useEffect(() =>
-    {
-        dispatch(repositoriesActions.loadAll());
-    }, [dispatch]);
+  const handleCreateFolder = () => {
+    navigate("/folders/create");
+  };
 
-    function openCreate()
-    {
-        setEditing(null);
-        setForm(emptyForm());
-        setShowForm(true);
+  const handleDeleteFolder = async (folderId: number) => {
+    const action = await dispatch(repositoriesActions.deleteFolder(folderId));
+    if (repositoriesActions.deleteFolder.fulfilled.match(action)) {
+      dispatch(repositoriesActions.loadRootContents());
+    }
+  };
+
+  const refreshRoot = () => {
+    dispatch(repositoriesActions.loadRootContents());
+  };
+
+  const handleDropToFolder = async (
+    data: ExplorerDragData,
+    targetFolderId: number,
+  ) => {
+    const action =
+      data.kind === "folder"
+        ? await dispatch(
+            repositoriesActions.moveFolder({
+              folderId: data.id,
+              targetParentId: targetFolderId,
+            }),
+          )
+        : await dispatch(
+            repositoriesActions.moveRepository({
+              repositoryId: data.id,
+              targetParentId: targetFolderId,
+            }),
+          );
+
+    const success =
+      data.kind === "folder"
+        ? repositoriesActions.moveFolder.fulfilled.match(action)
+        : repositoriesActions.moveRepository.fulfilled.match(action);
+
+    if (!success) {
+      sileo.error({
+        title: "Move failed",
+        description: "Could not move item into the selected folder.",
+      });
+      return;
     }
 
-    function openEdit(repository: IRepository)
-    {
-        setEditing(repository);
-        setForm({
-            name: repository.name,
-            description: repository.description,
-            path: repository.path,
-            scripts: repository.scripts,
-        });
-        setShowForm(true);
-    }
+    refreshRoot();
+  };
 
-    function cancelForm()
-    {
-        setShowForm(false);
-        setEditing(null);
-        setForm(emptyForm());
-    }
+  return (
+    <PageShell
+      title="Project Explorer"
+      subtitle="Navigate to your projects cleanly"
+      actions={
+        <ActionMenuButton
+          caption="New"
+          options={[
+            { label: "New Repository", onClick: handleCreateRepository },
+            {
+              label: "New Folder",
+              onClick: handleCreateFolder,
+              variant: "secondary",
+            },
+          ]}
+        />
+      }
+    >
+      <Breadcrumbs items={[{ label: "Home", path: "/" }]} />
 
-    async function handleSubmit(event: React.FormEvent)
-    {
-        event.preventDefault();
+      {loading ? <StateMessage text="Loading explorer..." /> : null}
 
-        if (editing)
-        {
-            await dispatch(repositoriesActions.update({ id: editing.id, data: form }));
-        }
-        else
-        {
-            await dispatch(repositoriesActions.create(form));
-        }
+      {!loading &&
+      (contents?.folders.length ?? 0) === 0 &&
+      (contents?.repositories.length ?? 0) === 0 ? (
+        <StateMessage text="No folders or repositories yet. Create your first item." />
+      ) : null}
 
-        cancelForm();
-    }
-
-    async function handleDelete(id: number)
-    {
-        if (!confirm("Delete this repository?")) return;
-        dispatch(repositoriesActions.remove(id));
-    }
-
-    return (
-        <div className="space-y-4">
-            <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold">Repositories</h2>
-                <button
-                    onClick={openCreate}
-                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                >
-                    Add Repository
-                </button>
-            </div>
-
-            {loading && <p className="text-sm text-gray-500">Loading…</p>}
-
-            {!loading && repositories.length === 0 && (
-                <p className="text-sm text-gray-400">No repositories yet.</p>
-            )}
-
-            <ul className="space-y-2">
-                {repositories.map((repo) => (
-                    <li key={repo.id} className="border rounded p-4 flex items-start justify-between gap-4">
-                        <div>
-                            <p className="font-medium">{repo.name}</p>
-                            {repo.description && (
-                                <p className="text-sm text-gray-500">{repo.description}</p>
-                            )}
-                            <p className="text-xs text-gray-400 font-mono">{repo.path}</p>
-                            {repo.scripts.length > 0 && (
-                                <ul className="mt-2 space-y-1">
-                                    {repo.scripts.map((script) => (
-                                        <li key={script.id} className="text-xs text-gray-600">
-                                            <span className="font-medium">{script.name}</span>
-                                            {" — "}
-                                            <code>{script.command}</code>
-                                            <span className="ml-1 text-gray-400">({script.category})</span>
-                                        </li>
-                                    ))}
-                                </ul>
-                            )}
-                        </div>
-                        <div className="flex gap-2 shrink-0">
-                            <button
-                                onClick={() => openEdit(repo)}
-                                className="text-sm px-3 py-1 border rounded hover:bg-gray-100"
-                            >
-                                Edit
-                            </button>
-                            <button
-                                onClick={() => handleDelete(repo.id)}
-                                className="text-sm px-3 py-1 border border-red-300 text-red-600 rounded hover:bg-red-50"
-                            >
-                                Delete
-                            </button>
-                        </div>
-                    </li>
-                ))}
-            </ul>
-
-            {showForm && (
-                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-                    <form
-                        onSubmit={handleSubmit}
-                        className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md space-y-4"
-                    >
-                        <h3 className="text-lg font-semibold">
-                            {editing ? "Edit Repository" : "New Repository"}
-                        </h3>
-
-                        <div>
-                            <label className="block text-sm font-medium mb-1">Name</label>
-                            <input
-                                required
-                                className="w-full border rounded px-3 py-2 text-sm"
-                                value={form.name}
-                                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium mb-1">Description</label>
-                            <input
-                                className="w-full border rounded px-3 py-2 text-sm"
-                                value={form.description}
-                                onChange={(e) => setForm({ ...form, description: e.target.value })}
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium mb-1">Path</label>
-                            <input
-                                required
-                                className="w-full border rounded px-3 py-2 text-sm font-mono"
-                                value={form.path}
-                                onChange={(e) => setForm({ ...form, path: e.target.value })}
-                            />
-                        </div>
-
-                        <div className="flex justify-end gap-2 pt-2">
-                            <button
-                                type="button"
-                                onClick={cancelForm}
-                                className="px-4 py-2 text-sm border rounded hover:bg-gray-100"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                type="submit"
-                                className="px-4 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
-                            >
-                                {editing ? "Save" : "Create"}
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            )}
-        </div>
-    );
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {contents?.folders.map((folder) => (
+          <FolderListItem
+            key={folder.id}
+            folder={folder}
+            onDelete={handleDeleteFolder}
+            onDropItem={handleDropToFolder}
+          />
+        ))}
+        {contents?.repositories.map((repo) => (
+          <RepositoryListItem key={repo.id} repository={repo} />
+        ))}
+      </div>
+    </PageShell>
+  );
 }
